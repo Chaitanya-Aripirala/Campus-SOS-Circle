@@ -1,0 +1,171 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Campus user profile representing students, responders, security, and administrators",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth unique user identifier" },
+        "name": { "type": "string", "description": "Full legal name or student display name", "minLength": 2, "maxLength": 100 },
+        "email": { "type": "string", "description": "Official college email address ending with @anurag.edu.in", "maxLength": 150 },
+        "role": { "type": "string", "enum": ["Student", "Responder", "Security", "Admin"], "description": "Assigned campus safety role" },
+        "rollNumber": { "type": "string", "description": "University roll number or employee staff code", "maxLength": 30 },
+        "department": { "type": "string", "description": "Academic department or operational division", "maxLength": 100 },
+        "year": { "type": "string", "description": "Academic year or professional designation", "maxLength": 50 },
+        "phone": { "type": "string", "description": "Contact phone number for emergency dispatches", "maxLength": 20 },
+        "profileImage": { "type": "string", "description": "Profile avatar URL", "maxLength": 500 },
+        "isActive": { "type": "boolean", "description": "Account status flag" },
+        "isAvailable": { "type": "boolean", "description": "Availability flag for responders" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Profile creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Profile update timestamp" }
+      },
+      "required": ["uid", "name", "email", "role", "isActive"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated Personally Identifiable Information (PII) for students and staff",
+      "type": "object",
+      "properties": {
+        "phone": { "type": "string", "description": "Direct student contact phone number", "maxLength": 20 },
+        "email": { "type": "string", "description": "Verified student email address", "maxLength": 150 },
+        "emergencyContact": { "type": "string", "description": "Guardian or emergency phone contact", "maxLength": 50 },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "PII update timestamp" }
+      },
+      "required": ["email"]
+    },
+    "SOSRequest": {
+      "title": "SOSRequest",
+      "description": "Real-time emergency distress request activated by students",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique SOS document ID" },
+        "userId": { "type": "string", "description": "User UID who raised the SOS" },
+        "userName": { "type": "string", "description": "Student full name", "maxLength": 100 },
+        "userEmail": { "type": "string", "description": "Student college email", "maxLength": 150 },
+        "userPhone": { "type": "string", "description": "Student contact phone", "maxLength": 20 },
+        "rollNumber": { "type": "string", "description": "Student university roll number", "maxLength": 30 },
+        "type": { "type": "string", "enum": ["General", "Medical", "Security", "Accident", "Harassment", "Fire", "Other"], "description": "Category of emergency" },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "description": "Incident priority severity level" },
+        "status": { "type": "string", "enum": ["ACTIVE", "ACKNOWLEDGED", "RESPONDING", "RESOLVED", "CANCELLED"], "description": "Emergency lifecycle status" },
+        "location": { "type": "object", "description": "Latitude and longitude coordinates" },
+        "locationName": { "type": "string", "description": "Nearest campus landmark or building", "maxLength": 200 },
+        "notes": { "type": "string", "description": "Student additional notes or description", "maxLength": 1000 },
+        "responderId": { "type": "string", "description": "Assigned responder UID" },
+        "responderName": { "type": "string", "description": "Assigned responder name", "maxLength": 100 },
+        "responderPhone": { "type": "string", "description": "Assigned responder phone", "maxLength": 20 },
+        "createdAt": { "type": "string", "format": "date-time", "description": "SOS trigger timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Status update timestamp" }
+      },
+      "required": ["userId", "userName", "type", "severity", "status"]
+    },
+    "Incident": {
+      "title": "Incident",
+      "description": "Campus safety incident report submitted by students or security personnel",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique incident ID" },
+        "title": { "type": "string", "description": "Incident headline title", "minLength": 3, "maxLength": 200 },
+        "description": { "type": "string", "description": "Detailed factual account of the safety event", "minLength": 5, "maxLength": 3000 },
+        "category": { "type": "string", "enum": ["Medical", "Security", "Accident", "Fire", "Harassment", "Lost Person", "Infrastructure", "Other"], "description": "Primary safety classification" },
+        "priority": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"], "description": "Triage urgency" },
+        "status": { "type": "string", "enum": ["REPORTED", "INVESTIGATING", "ACTION_TAKEN", "RESOLVED", "DISMISSED"], "description": "Resolution status" },
+        "reporterId": { "type": "string", "description": "Reporter UID or ANONYMOUS" },
+        "reporterName": { "type": "string", "description": "Reporter name", "maxLength": 100 },
+        "reporterEmail": { "type": "string", "description": "Reporter college email", "maxLength": 150 },
+        "isAnonymous": { "type": "boolean", "description": "Anonymous submission flag" },
+        "locationName": { "type": "string", "description": "Campus location name", "maxLength": 200 },
+        "photoUrl": { "type": "string", "description": "Cloudinary uploaded photo URL", "maxLength": 500 },
+        "aiAnalysis": { "type": "object", "description": "AI categorization and triage summary" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Incident report timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Incident update timestamp" }
+      },
+      "required": ["title", "description", "category", "priority", "status", "reporterId"]
+    },
+    "CampusLocation": {
+      "title": "CampusLocation",
+      "description": "Designated campus safety landmark, medical centre, or security post",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Location code or ID" },
+        "name": { "type": "string", "description": "Facility name", "maxLength": 150 },
+        "category": { "type": "string", "enum": ["Security", "Medical", "Fire Safety", "Emergency Gate", "Safe Zone", "Academic", "Administrative", "Hostel", "Sports", "Cafeteria"], "description": "Category of place" },
+        "coordinates": { "type": "object", "description": "Lat and lng coordinates" },
+        "description": { "type": "string", "description": "Safety services available", "maxLength": 500 },
+        "contactPhone": { "type": "string", "description": "Direct room or guard phone", "maxLength": 20 },
+        "is24x7": { "type": "boolean", "description": "Round-the-clock availability" },
+        "floor": { "type": "string", "description": "Building floor level", "maxLength": 50 }
+      },
+      "required": ["name", "category", "coordinates"]
+    },
+    "SystemSetting": {
+      "title": "SystemSetting",
+      "description": "Campus safety administration settings and emergency contacts",
+      "type": "object",
+      "properties": {
+        "collegeName": { "type": "string", "description": "Name of the university", "maxLength": 150 },
+        "studentEmailDomain": { "type": "string", "description": "Allowed student email domain (anurag.edu.in)", "maxLength": 100 },
+        "allowSelfRegistration": { "type": "boolean", "description": "Self registration toggle" },
+        "emergencyContacts": { "type": "array", "description": "Official campus emergency phone helplines" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Settings update timestamp" }
+      },
+      "required": ["collegeName", "studentEmailDomain"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security log of safety events and administrative actions",
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "description": "Event code (e.g. SOS_TRIGGERED, USER_REGISTER)", "maxLength": 100 },
+        "performedBy": { "type": "string", "description": "UID or email of actor", "maxLength": 150 },
+        "details": { "type": "object", "description": "Event context parameters" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Log creation timestamp" }
+      },
+      "required": ["action", "timestamp"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrative user role registry",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Admin UID" },
+        "email": { "type": "string", "description": "Admin email", "maxLength": 150 },
+        "grantedAt": { "type": "string", "format": "date-time", "description": "Role grant timestamp" }
+      },
+      "required": ["uid", "email"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Student and campus personnel profiles with role attributes"
+    },
+    "/users/{userId}/private/info": {
+      "schema": "UserPrivateInfo",
+      "description": "Isolated private student contact details and PII"
+    },
+    "/sosRequests/{sosId}": {
+      "schema": "SOSRequest",
+      "description": "Campus emergency distress requests and responder dispatch records"
+    },
+    "/incidents/{incidentId}": {
+      "schema": "Incident",
+      "description": "Campus safety incident logs and evidence photos"
+    },
+    "/locations/{locationId}": {
+      "schema": "CampusLocation",
+      "description": "Interactive campus safety facilities, medical wards, and security posts"
+    },
+    "/settings/{settingId}": {
+      "schema": "SystemSetting",
+      "description": "Global campus safety portal configurations and helpline directory"
+    },
+    "/auditLogs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Immutable audit trail of emergency actions and registrations"
+    },
+    "/admins/{userId}": {
+      "schema": "AdminRecord",
+      "description": "Privileged security and safety administrators"
+    }
+  }
+}

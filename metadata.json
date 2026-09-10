@@ -1,0 +1,6 @@
+{
+  "name": "Campus SOS Circle",
+  "description": "Real-time campus safety, emergency SOS, responder coordination, and AI campus assistance platform.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

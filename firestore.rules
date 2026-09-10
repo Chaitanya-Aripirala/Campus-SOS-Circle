@@ -1,0 +1,142 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'aripiralachaitanya1@gmail.com' ||
+        request.auth.token.email == 'admin@anurag.edu.in' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile Validation Helper
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() <= 128 &&
+             data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 150 &&
+             data.role in ['Student', 'Responder', 'Security', 'Admin'] &&
+             data.isActive is bool;
+    }
+
+    // SOS Validation Helper
+    function isValidSOS(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userName is string && data.userName.size() <= 100 &&
+             data.type in ['General', 'Medical', 'Security', 'Accident', 'Harassment', 'Fire', 'Other'] &&
+             data.severity in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+             data.status in ['ACTIVE', 'ACKNOWLEDGED', 'RESPONDING', 'RESOLVED', 'CANCELLED'];
+    }
+
+    // Incident Validation Helper
+    function isValidIncident(data) {
+      return data.title is string && data.title.size() >= 3 && data.title.size() <= 200 &&
+             data.description is string && data.description.size() >= 5 && data.description.size() <= 3000 &&
+             data.category in ['Medical', 'Security', 'Accident', 'Fire', 'Harassment', 'Lost Person', 'Infrastructure', 'Other'] &&
+             data.priority in ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] &&
+             data.status in ['REPORTED', 'INVESTIGATING', 'ACTION_TAKEN', 'RESOLVED', 'DISMISSED'] &&
+             data.reporterId is string;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isSignedIn();
+      allow create: if isValidId(userId) && isOwner(userId) && isValidUser(incoming()) && (
+        (incoming().role == 'Student' && incoming().email.matches('.*@anurag\\.edu\\.in$')) ||
+        isAdmin()
+      );
+      allow update: if isValidId(userId) && isValidUser(incoming()) && (
+        isAdmin() ||
+        (isOwner(userId) && incoming().role == existing().role && incoming().uid == existing().uid &&
+         incoming().diff(existing()).affectedKeys().hasOnly([
+           'name', 'phone', 'department', 'year', 'rollNumber', 'profileImage', 'isAvailable', 'currentLocation', 'updatedAt'
+         ]))
+      );
+      allow delete: if isAdmin();
+
+      // Private PII subcollection
+      match /private/info {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // Emergency SOS alerts collection
+    match /sosRequests/{sosId} {
+      allow read: if isSignedIn();
+      allow create: if isValidId(sosId) && isSignedIn() && isValidSOS(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isValidId(sosId) && isSignedIn() && isValidSOS(incoming()) && (
+        isAdmin() ||
+        (isOwner(existing().userId) && incoming().status == 'CANCELLED' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'notes', 'updatedAt'])) ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'responderId', 'responderName', 'responderPhone', 'notes', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Incidents reports collection
+    match /incidents/{incidentId} {
+      allow read: if isSignedIn();
+      allow create: if isValidId(incidentId) && isSignedIn() && isValidIncident(incoming()) && (
+        incoming().reporterId == request.auth.uid ||
+        (incoming().isAnonymous == true && incoming().reporterId == 'ANONYMOUS')
+      );
+      allow update: if isValidId(incidentId) && isSignedIn() && isValidIncident(incoming()) && (
+        isAdmin() ||
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'priority', 'aiAnalysis', 'updatedAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Campus safety facilities & emergency landmarks
+    match /locations/{locationId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Global settings & emergency helpline contacts
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Immutable audit logs
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Admins registry
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
